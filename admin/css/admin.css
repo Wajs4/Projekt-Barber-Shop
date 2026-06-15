@@ -1,0 +1,51 @@
+/* Admin centered panel styles */
+:root{
+  --admin-accent: #d6a354; /* matches template primary */
+  --admin-accent-dark: #b58b3f;
+  --admin-bg: #ffffff;
+}
+
+.admin-overlay{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.35);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  z-index:3000;
+}
+
+.admin-panel{
+  width:100%;
+  max-width:980px;
+}
+
+.admin-card{
+  background:var(--admin-bg);
+  border-radius:12px;
+  box-shadow:0 20px 45px rgba(8,12,26,0.35);
+  overflow:hidden;
+  border-top:6px solid var(--admin-accent);
+  padding:24px;
+}
+
+.admin-card h3,
+.admin-card h5{
+  margin-top:0;
+}
+
+.admin-card .btn-primary{
+  background:var(--admin-accent);
+  border-color:var(--admin-accent);
+}
+
+.admin-card .btn-primary:hover{
+  background:var(--admin-accent-dark);
+  border-color:var(--admin-accent-dark);
+}
+
+@media (max-width:767px){
+  .admin-panel{padding:0 8px}
+  .admin-card{padding:18px}
+}

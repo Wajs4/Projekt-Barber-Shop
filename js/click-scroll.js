@@ -35,3 +35,30 @@ $(document).ready(function(){
     $('#sidebarMenu .nav-item .nav-link').eq(0).addClass('active');
     $('#sidebarMenu .nav-item .nav-link:link').eq(0).removeClass('inactive');
 });
+
+// Smooth scroll + activation for reviews anchor
+$(function(){
+    // click handler for reviews link
+    $('#sidebarMenu .nav-link[href="#reviews"]').click(function(e){
+        e.preventDefault();
+        var offsetClick = $('#reviews').offset().top - 120; // raise target to show section header
+        $('html, body').stop().animate({ scrollTop: offsetClick }, 300, function(){
+            try { history.replaceState(null, null, '#reviews'); } catch(e){}
+        });
+        // set active class on the clicked link
+        $('#sidebarMenu .nav-link').removeClass('active').addClass('inactive');
+        $(this).addClass('active').removeClass('inactive');
+    });
+
+    // update active state while scrolling for reviews
+    $(document).scroll(function(){
+        var docScroll = $(document).scrollTop() + 20;
+        if ($('#reviews').length) {
+            var revTop = $('#reviews').offset().top;
+            if (docScroll >= revTop) {
+                $('#sidebarMenu .nav-link').removeClass('active').addClass('inactive');
+                $('#sidebarMenu .nav-link[href="#reviews"]').addClass('active').removeClass('inactive');
+            }
+        }
+    });
+});

@@ -1,0 +1,10 @@
+{
+  "name": "barber/shop",
+  "description": "Barber shop site",
+  "autoload": {
+    "psr-4": {
+      "App\\": "src/"
+    }
+  },
+  "require": {}
+}
