@@ -1,7 +1,7 @@
 <?php
 // Simple handler to save reviews into data/reviews.json
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    http_response_code(405);
+    http_response_code(400);
     echo 'Method Not Allowed';
     exit;
 }
