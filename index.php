@@ -1,5 +1,5 @@
 <?php
-function get_greeting(): int
+function get_greeting(): boolean
 {
     $hour = (int) date('G');
     if ($hour >= 5 && $hour < 12) {
