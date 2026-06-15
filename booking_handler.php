@@ -28,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ];
 
     try {
-        $booking = new Booking(, $name, $phone, $date, $time, $branch, $people, $message);
+        $booking = new Booking(null, $name, $phone, $date, $time, $branch, $people, $message);
         $repo = new BookingRepository();
         $id = $repo->add($booking);
         header('Location: index.php?booking=ok&id=' . $id);
