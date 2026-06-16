@@ -2,7 +2,7 @@
     {
         "id": 1,
         "title": "Strih vlasov",
-        "price": "\u20ac36.00",
+        "price": "\u20ac18.00",
         "image": "images\/services\/woman-cutting-hair-man-salon.jpg"
     },
     {
@@ -14,13 +14,13 @@
     {
         "id": 3,
         "title": "Holenie",
-        "price": "\u20ac30.00",
+        "price": "\u20ac35.00",
         "image": "images\/services\/hairdresser-grooming-client.jpg"
     },
     {
-        "id": 5,
-        "title": "Depil\u00e1cia chlpov",
-        "price": "\u20ac20.00",
-        "image": "\"C:\\Users\\-\\Desktop\\depilaciaaa.jfif\""
+        "id": 4,
+        "title": "Detsk\u00fd strih",
+        "price": "\u20ac15.00",
+        "image": "images\/services\/decko.jpg"
     }
 ]
