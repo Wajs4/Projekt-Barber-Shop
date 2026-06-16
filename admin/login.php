@@ -1,25 +1,64 @@
 <?php
-require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/../src/bootstrap.php';
 
-Auth::start();
+class LoginController 
+{
+    private string $error = '';
 
-if (Auth::isAdmin()) {
-    header('Location: dashboard.php');
-    exit;
-}
+    /**
+     * Spustí proces spracovania prihlásenia
+     */
+    public function handleRequest(): void 
+    {
+        Auth::start();
 
-$error = '';
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $user = $_POST['username'] ?? '';
-    $pass = $_POST['password'] ?? '';
-    if (Auth::login($user, $pass)) {
-        header('Location: dashboard.php');
+        // Ak už je používateľ prihlásený ako admin, presmerujeme ho
+        if (Auth::isAdmin()) {
+            $this->redirect('dashboard.php');
+        }
+
+        // Spracovanie POST požiadavky (odoslanie formulára)
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $this->processLogin();
+        }
+    }
+
+    /**
+     * Logika overenia prihlasovacích údajov
+     */
+    private function processLogin(): void 
+    {
+        $user = $_POST['username'] ?? '';
+        $pass = $_POST['password'] ?? '';
+
+        if (Auth::login($user, $pass)) {
+            $this->redirect('dashboard.php');
+        } else {
+            $this->error = 'Neplatné používateľské meno alebo heslo';
+        }
+    }
+
+    /**
+     * Pomocná metóda na vrátenie chybovej správy do HTML
+     */
+    public function getError(): string 
+    {
+        return $this->error;
+    }
+
+    /**
+     * Pomocná metóda na bezpečné presmerovanie
+     */
+    private function redirect(string $url): void 
+    {
+        header("Location: $url");
         exit;
-    } else {
-        $error = 'Neplatné používateľské meno alebo heslo';
     }
 }
+
+// Inicializácia a spustenie kontrolera prihlásenia
+$controller = new LoginController();
+$controller->handleRequest();
 ?>
 <!doctype html>
 <html>
@@ -36,9 +75,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="admin-card">
             <div class="container" style="max-width:420px">
                 <h3 class="mb-3">Prihlásenie administrátora</h3>
-                <?php if ($error): ?>
-                        <div class="alert alert-danger"><?php echo htmlspecialchars($error); ?></div>
+                
+                <?php if ($controller->getError()): ?>
+                        <div class="alert alert-danger"><?php echo htmlspecialchars($controller->getError()); ?></div>
                 <?php endif; ?>
+                
                 <form method="post">
                         <div class="mb-3">
                                 <label class="form-label">Používateľ</label>

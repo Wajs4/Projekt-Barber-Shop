@@ -1,4 +1,8 @@
 <?php
+// Načítanie bootstrapu a závislostí
+require_once __DIR__ . '/src/bootstrap.php';
+
+// PÔVODNÁ FUNKCIA (Ponechaná v pôvodnom znení mimo triedy)
 function get_greeting(): string
 {
     $hour = (int) date('G');
@@ -10,39 +14,55 @@ function get_greeting(): string
 
     return 'Dobrý večer';
 }
+
+// NOVÝ OOP KONTROLER pre správu dát na hlavnej stránke
+class HomepageController 
+{
+    private ServiceRepository $serviceRepo;
+    private array $services = [];
+    private array $reviews = [];
+
+    public function __construct() 
+    {
+        // Inicializácia repozitára pre služby pomocou cesty z bootstrapu
+        $this->serviceRepo = new ServiceRepository(__DIR__ . '/data/services.json');
+    }
+
+    /**
+     * Hlavná metóda, ktorá spracuje požiadavku a načíta dáta
+     */
+    public function handleRequest(): void 
+    {
+        // 1. Načítanie služieb cez repozitár
+        $this->services = $this->serviceRepo->getAll();
+
+        // 2. Načítanie a dekódovanie recenzií z JSON súboru
+        $reviewsPath = __DIR__ . '/data/reviews.json';
+        $rvData = @file_get_contents($reviewsPath);
+        $rawReviews = json_decode($rvData, true) ?: [];
+        
+        // Otočenie poľa, aby boli najnovšie recenzie navrchu
+        $this->reviews = array_reverse($rawReviews);
+    }
+
+    // Verejné metódy (gettery) na bezpečné vytiahnutie dát do HTML šablóny
+    public function getServices(): array 
+    {
+        return $this->services;
+    }
+
+    public function getReviews(): array 
+    {
+        return $this->reviews;
+    }
+}
+
+// Spustenie objektovej logiky
+$controller = new HomepageController();
+$controller->handleRequest();
 ?>
 
-<!doctype html>
-<html lang="sk">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-
-        <meta name="description" content="">
-        <meta name="author" content="">
-
-        <title>Pánsky holič - Barber</title>
-
-        <!-- CSS FILES -->        
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
-        <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;500&display=swap" rel="stylesheet">
-
-        <link href="css/bootstrap.min.css" rel="stylesheet">
-
-        <link href="css/bootstrap-icons.css" rel="stylesheet">
-
-        <link href="css/templatemo-barber-shop.css" rel="stylesheet">
-<!--
-
-TemplateMo 585 Barber Shop
-
-https://templatemo.com/tm-585-barber-shop
-
--->
-    </head>
+<?php include 'parts/head.php'; ?>
     
     <body>
 
@@ -208,23 +228,19 @@ https://templatemo.com/tm-585-barber-shop
                                 <div class="col-lg-12 col-12">
                                     <h2 class="mb-5">Služby</h2>
                                 </div>
-                                <?php
-                                    require_once __DIR__ . '/src/bootstrap.php';
-                                    $repo = new ServiceRepository(__DIR__ . '/data/services.json');
-                                    $services = $repo->getAll();
-                                    foreach ($services as $service) {
-                                        $img = htmlspecialchars($service->getImage());
-                                        $title = htmlspecialchars($service->getTitle());
-                                        $price = htmlspecialchars($service->getPrice());
-                                        echo "<div class=\"col-lg-6 col-12 mb-4\">";
-                                        echo "<div class=\"services-thumb\">";
-                                        echo "<img src=\"$img\" class=\"services-image img-fluid\" alt=\"\">";
-                                        echo "<div class=\"services-info d-flex align-items-end\">";
-                                        echo "<h4 class=\"mb-0\">$title</h4>";
-                                        echo "<strong class=\"services-thumb-price\">$price</strong>";
-                                        echo "</div></div></div>";
-                                    }
-                                ?>
+                                
+                                <?php foreach ($controller->getServices() as $service): ?>
+                                    <div class="col-lg-6 col-12 mb-4">
+                                        <div class="services-thumb">
+                                            <img src="<?php echo htmlspecialchars($service->getImage()); ?>" class="services-image img-fluid" alt="">
+                                            <div class="services-info d-flex align-items-end">
+                                                <h4 class="mb-0"><?php echo htmlspecialchars($service->getTitle()); ?></h4>
+                                                <strong class="services-thumb-price"><?php echo htmlspecialchars($service->getPrice()); ?></strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+
                             </div>
                         </div>
                     </section>
@@ -373,12 +389,6 @@ https://templatemo.com/tm-585-barber-shop
                                 </div>
                             </div>
 
-                            <?php
-                                $reviewsPath = __DIR__ . '/data/reviews.json';
-                                $rvData = @file_get_contents($reviewsPath);
-                                $reviews = json_decode($rvData, true) ?: [];
-                            ?>
-
                             <div class="row mb-4">
                                 <?php if (isset($_GET['review']) && $_GET['review'] === 'ok'): ?>
                                     <div class="col-12"><div class="alert alert-success">Ďakujeme za recenziu!</div></div>
@@ -387,10 +397,10 @@ https://templatemo.com/tm-585-barber-shop
                                 <?php endif; ?>
 
                                 <div class="col-lg-8 col-12">
-                                    <?php if (count($reviews) === 0): ?>
+                                    <?php if (count($controller->getReviews()) === 0): ?>
                                         <p>Zatiaľ žiadne recenzie — buď prvý!</p>
                                     <?php else: ?>
-                                        <?php foreach (array_reverse($reviews) as $r): ?>
+                                        <?php foreach ($controller->getReviews() as $r): ?>
                                             <div class="card mb-3">
                                                 <div class="card-body">
                                                     <h5 class="card-title mb-1"><?php echo htmlspecialchars($r['name'] ?? ''); ?></h5>
@@ -577,11 +587,7 @@ https://templatemo.com/tm-585-barber-shop
                 </footer>
             </div>
 
-        <!-- JAVASCRIPT FILES -->
-        <script src="js/jquery.min.js"></script>
-        <script src="js/bootstrap.min.js"></script>
-        <script src="js/click-scroll.js"></script>
-        <script src="js/custom.js"></script>
+        <?php include 'parts/javascript.php'; ?>
 
     </body>
 </html>

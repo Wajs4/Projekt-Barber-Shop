@@ -1,50 +1,108 @@
 <?php
-require_once __DIR__ . '/auth.php';
-require_admin();
 require_once __DIR__ . '/../src/bootstrap.php';
 
-$repo = new ServiceRepository(__DIR__ . '/../data/services.json');
-$servicesObjs = $repo->getAll();
-$services = array_map(function($s){ return $s->toArray(); }, $servicesObjs);
+class DashboardController 
+{
+    private ServiceRepository $repo;
+    private array $services = [];
+    private ?array $editItem = null;
 
-// Handle actions
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $action = $_POST['action'] ?? '';
-    if ($action === 'add') {
-        $title = trim($_POST['title'] ?? '');
-        $price = trim($_POST['price'] ?? '');
-        $image = trim($_POST['image'] ?? '');
-        $service = new Service(0, $title, $price, $image);
-        $repo->add($service);
-        header('Location: dashboard.php'); exit;
+    public function __construct() 
+    {
+        
+        $this->repo = new ServiceRepository(__DIR__ . '/../data/services.json');
     }
 
-    if ($action === 'edit') {
-        $id = intval($_POST['id'] ?? 0);
-        $title = trim($_POST['title'] ?? '');
-        $price = trim($_POST['price'] ?? '');
-        $image = trim($_POST['image'] ?? '');
-        $service = new Service($id, $title, $price, $image);
-        $repo->update($service);
-        header('Location: dashboard.php'); exit;
+    public function handleRequest(): void 
+    {
+        
+        Auth::start();
+        Auth::requireAdmin();
+
+    
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $this->handlePostActions();
+        }
+        
+        $this->handleGetActions();
+
+        $this->loadServices();
     }
 
-    if ($action === 'delete') {
-        $id = intval($_POST['id'] ?? 0);
-        $repo->deleteById($id);
-        header('Location: dashboard.php'); exit;
+    private function handlePostActions(): void 
+    {
+        $action = $_POST['action'] ?? '';
+
+        if ($action === 'add') {
+            $title = trim($_POST['title'] ?? '');
+            $price = trim($_POST['price'] ?? '');
+            $image = trim($_POST['image'] ?? '');
+            
+            $service = new Service(0, $title, $price, $image);
+            $this->repo->add($service);
+            $this->redirect('dashboard.php');
+        }
+
+        if ($action === 'edit') {
+            $id = intval($_POST['id'] ?? 0);
+            $title = trim($_POST['title'] ?? '');
+            $price = trim($_POST['price'] ?? '');
+            $image = trim($_POST['image'] ?? '');
+            
+            $service = new Service($id, $title, $price, $image);
+            $this->repo->update($service);
+            $this->redirect('dashboard.php');
+        }
+
+        if ($action === 'delete') {
+            $id = intval($_POST['id'] ?? 0);
+            $this->repo->deleteById($id);
+            $this->redirect('dashboard.php');
+        }
+    }
+
+    private function handleGetActions(): void 
+    {
+        if (isset($_GET['edit'])) {
+            $eid = intval($_GET['edit']);
+            foreach ($this->repo->getAll() as $s) {
+                if ($s->getId() === $eid) { 
+                    $this->editItem = $s->toArray(); 
+                    break; 
+                }
+            }
+        }
+    }
+
+    private function loadServices(): void 
+    {
+        $servicesObjs = $this->repo->getAll();
+        $this->services = array_map(function($s) { 
+            return $s->toArray(); 
+        }, $servicesObjs);
+    }
+
+    public function getServices(): array 
+    {
+        return $this->services;
+    }
+
+    public function getEditItem(): ?array 
+    {
+        return $this->editItem;
+    }
+
+    private function redirect(string $url): void 
+    {
+        header("Location: $url");
+        exit;
     }
 }
 
-$editItem = null;
-if (isset($_GET['edit'])) {
-    $eid = intval($_GET['edit']);
-    foreach ($repo->getAll() as $s) {
-        if ($s->getId() === $eid) { $editItem = $s->toArray(); break; }
-    }
-}
-
+$controller = new DashboardController();
+$controller->handleRequest();
 ?>
+
 <!doctype html>
 <html>
 <head>
@@ -69,27 +127,27 @@ if (isset($_GET['edit'])) {
 
         <div class="row">
             <div class="col-md-6">
-                <h5><?php echo $editItem ? 'Upraviť službu' : 'Pridať službu'; ?></h5>
+                <h5><?php echo $controller->getEditItem() ? 'Upraviť službu' : 'Pridať službu'; ?></h5>
                 <form method="post">
-                    <?php if ($editItem): ?>
-                        <input type="hidden" name="id" value="<?php echo $editItem['id']; ?>">
+                    <?php if ($controller->getEditItem()): ?>
+                        <input type="hidden" name="id" value="<?php echo $controller->getEditItem()['id']; ?>">
                     <?php endif; ?>
-                    <input type="hidden" name="action" value="<?php echo $editItem ? 'edit' : 'add'; ?>">
+                    <input type="hidden" name="action" value="<?php echo $controller->getEditItem() ? 'edit' : 'add'; ?>">
                     <div class="mb-3">
                         <label class="form-label">Názov</label>
-                        <input name="title" class="form-control" required value="<?php echo $editItem ? htmlspecialchars($editItem['title']) : ''; ?>">
+                        <input name="title" class="form-control" required value="<?php echo $controller->getEditItem() ? htmlspecialchars($controller->getEditItem()['title']) : ''; ?>">
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Cena (napr. €36.00)</label>
-                        <input name="price" class="form-control" required value="<?php echo $editItem ? htmlspecialchars($editItem['price']) : ''; ?>">
+                        <input name="price" class="form-control" required value="<?php echo $controller->getEditItem() ? htmlspecialchars($controller->getEditItem()['price']) : ''; ?>">
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Cesta k obrázku (relatívne k root stránky)</label>
-                        <input name="image" class="form-control" required value="<?php echo $editItem ? htmlspecialchars($editItem['image']) : ''; ?>">
+                        <input name="image" class="form-control" required value="<?php echo $controller->getEditItem() ? htmlspecialchars($controller->getEditItem()['image']) : ''; ?>">
                     </div>
                     <div class="d-flex gap-2">
-                      <button class="btn btn-primary" type="submit"><?php echo $editItem ? 'Uložiť' : 'Pridať'; ?></button>
-                      <?php if ($editItem): ?>
+                      <button class="btn btn-primary" type="submit"><?php echo $controller->getEditItem() ? 'Uložiť' : 'Pridať'; ?></button>
+                      <?php if ($controller->getEditItem()): ?>
                         <a class="btn btn-secondary" href="dashboard.php">Zrušiť</a>
                       <?php endif; ?>
                     </div>
@@ -101,7 +159,7 @@ if (isset($_GET['edit'])) {
                 <table class="table table-sm">
                     <thead><tr><th>ID</th><th>Title</th><th>Price</th><th></th></tr></thead>
                     <tbody>
-                    <?php foreach ($services as $s): ?>
+                    <?php foreach ($controller->getServices() as $s): ?>
                         <tr>
                             <td><?php echo $s['id']; ?></td>
                             <td><?php echo htmlspecialchars($s['title']); ?></td>

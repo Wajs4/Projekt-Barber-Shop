@@ -39,7 +39,7 @@ class ServiceRepository {
     public function add(Service $service) {
         $services = $this->getAll();
         $serviceId = $this->nextId($services);
-        $reflection = new ReflectionClass($service);
+        $reflection = new \ReflectionClass($service);
         $prop = $reflection->getProperty('id');
         $prop->setAccessible(true);
         $prop->setValue($service, $serviceId);
